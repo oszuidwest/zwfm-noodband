@@ -6,18 +6,17 @@ on:
 jobs:
   run-script:
     runs-on: ubuntu-latest
-    container: ubuntu:latest
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Container voorbereiden met FFmpeg
-      run: apt-get update -y && apt-get install -y wget ffmpeg curl
+    - name: Runner voorbereiden met FFmpeg
+      run: sudo apt-get update -y && sudo apt-get install -y wget ffmpeg curl
 
     - name: StereoTool downloaden
       run: |
         wget https://www.stereotool.com/download/stereo_tool_cmd_64 -O /opt/stereotool
-        chmod +x /opt/stereotool
+        sudo chmod +x /opt/stereotool
 
     - name: Oude noodband verwijderen
       run: rm -f /tmp/noodband.flac
@@ -32,7 +31,7 @@ jobs:
 
     - name: MicroMPX noodband van 10min maken als test
       run: |
-        ffmpeg -hide_banner -i /tmp/noodband.mp3 -t 600 -f wav -acodec pcm_s16le -ar 192000 -ac 2 - | /opt/stereotool -q -r 192000 - - -s ${{ github.workspace }}/st_cleaned.ini | ffmpeg -hide_banner -i - -f wav -ac 1 -ar 192000 /tmp/noodband.flac
+        ffmpeg -hide_banner -i /tmp/noodband.mp3 -t 600 -f wav -acodec pcm_s16le -ar 192000 -ac 2 - | /opt/stereotool -q -r 192000 - - -s $GITHUB_WORKSPACE/st_cleaned.ini | ffmpeg -hide_banner -i - -f wav -ac 1 -ar 192000 /tmp/noodband.flac
 
     - name: FLAC file uploaden
       run: curl --silent https://bashupload.com -T /tmp/noodband.flac
