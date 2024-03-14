@@ -1,0 +1,38 @@
+name: On Demand Script
+
+on: 
+  workflow_dispatch:
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    container: ubuntu:latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Environment
+      run: apt-get update -y && apt-get install -y wget ffmpeg curl
+
+    - name: Download StereoTool
+      run: |
+        wget https://www.stereotool.com/download/stereo_tool_cmd_64 -O /opt/stereotool
+        chmod +x /opt/stereotool
+
+    - name: Remove Old Emergency Broadcast
+      run: rm -f /tmp/noodband.flac
+
+    - name: Download New Emergency Broadcast if Not Exists
+      run: |
+        if [ ! -f "/tmp/noodband.mp3" ]; then
+          wget https://audiologger.westeurope.cloudapp.azure.com/2024-02-28_05.mp3 -O /tmp/noodband.mp3
+        else
+          echo "File /tmp/noodband.mp3 already exists. Skipping download to save data on Azure."
+        fi
+
+    - name: Process Audio with FFMpeg and StereoTool
+      run: |
+        ffmpeg -hide_banner -i /tmp/noodband.mp3 -t 600 -f wav -acodec pcm_s16le -ar 192000 -ac 2 - | /opt/stereotool -q -r 192000 - - -s ${{ github.workspace }}/st_cleaned.ini | ffmpeg -hide_banner -i - -f wav -ac 1 -ar 192000 /tmp/noodband.flac
+
+    - name: Upload Generated File
+      run: curl --silent https://bashupload.com -T /tmp/noodband.flac
