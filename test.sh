@@ -15,7 +15,7 @@ else
 fi
 
 # Boel pipen (verwijder -t 600 voor hele uur, anders 10min)
-ffmpeg -hide_banner -i /tmp/noodband.mp3 -t 600 -f wav -acodec pcm_s16le -ar 192000 -ac 2 - | stereotool -q -r 192000 - - -s /root/st.ini | ffmpeg -hide_banner -i - -f wav -ac 1 -ar 192000 /tmp/noodband.flac
+ffmpeg -hide_banner -i /tmp/noodband.mp3 -t 600 -f wav -acodec pcm_s16le -ar 192000 -ac 2 - | /opt/stereotool -q -r 192000 - - -s /root/st.ini | ffmpeg -hide_banner -i - -f wav -ac 1 -ar 192000 /tmp/noodband.flac
 
 # Gegenereerd bestand uploaden
 curl --silent bashupload.com -T /tmp/noodband.flac
