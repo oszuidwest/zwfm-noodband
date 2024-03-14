@@ -33,5 +33,8 @@ jobs:
       run: |
         ffmpeg -hide_banner -i /tmp/noodband.mp3 -f wav -acodec pcm_s16le -ar 192000 -ac 2 - | /opt/stereotool -q -r 192000 - - -s $GITHUB_WORKSPACE/st_cleaned.ini | ffmpeg -hide_banner -i - -f wav -ac 1 -ar 192000 /tmp/noodband.flac
 
-    - name: FLAC file uploaden
-      run: curl --silent https://bashupload.com -T /tmp/noodband.flac
+    - name: FLAC file uploaden als artefact
+      uses: actions/upload-artifact@v4
+      with:
+        name: noodband-flac
+        path: /tmp/noodband.flac
