@@ -24,7 +24,7 @@ jobs:
     - name: Uur uit de audiologger downloaden
       run: |
         if [ ! -f "/tmp/noodband.mp3" ]; then
-          wget https://audiologger.westeurope.cloudapp.azure.com/2024-02-28_05.mp3 -O /tmp/noodband.mp3
+          wget https://zuidwest.app/tmp/noodband.mp3 -O /tmp/noodband.mp3
         else
           echo "File /tmp/noodband.mp3 already exists. Skipping download to save data on Azure."
         fi

@@ -9,7 +9,7 @@ apt update -y; apt install ffmpeg -y
 rm /tmp/noodband.flac
 
 if [ ! -f "/tmp/noodband.mp3" ]; then
-    wget https://audiologger.westeurope.cloudapp.azure.com/2024-02-28_05.mp3 -O /tmp/noodband.mp3
+    wget https://zuidwest.app/tmp/noodband.mp3 -O /tmp/noodband.mp3
 else
     echo "Bestand /tmp/noodband.mp3 bestaat al. Data is duur op Azure, dus downloaden het niet opnieuw!."
 fi
