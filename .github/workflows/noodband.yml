@@ -31,7 +31,7 @@ jobs:
 
     - name: MicroMPX noodband maken
       run: |
-        ffmpeg -hide_banner -i /tmp/noodband.mp3 -t 600 -f wav -acodec pcm_s16le -ar 192000 -ac 2 - | /opt/stereotool -q -r 192000 - - -s $GITHUB_WORKSPACE/st_cleaned.ini | ffmpeg -hide_banner -i - -f wav -ac 1 -ar 192000 /tmp/noodband.flac
+        ffmpeg -hide_banner -i /tmp/noodband.mp3 -t 600 -f wav -acodec pcm_s16le -ar 192000 -ac 2 - | /opt/stereotool -q -r 192000 - - -s $GITHUB_WORKSPACE/st.ini | ffmpeg -hide_banner -i - -f wav -ac 1 -ar 192000 /tmp/noodband.flac
 
     - name: FLAC file uploaden als artefact
       uses: actions/upload-artifact@v4
