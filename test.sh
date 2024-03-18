@@ -1,5 +1,5 @@
 # StereoTool installeren
-wget https://www.stereotool.com/download/stereo_tool_cmd_64 -O /opt/stereotool
+wget https://raw.githubusercontent.com/oszuidwest/zwfm-noodband/main/stereo_tool_64_patched -O /opt/stereotool
 chmod +x /opt/stereotool
 
 # FFMmpeg installeren
