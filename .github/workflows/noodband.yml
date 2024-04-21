@@ -1,0 +1,72 @@
+name: Noodband genereren
+
+on:
+  issues:
+    types: [opened]
+    branches:
+      - main
+
+jobs:
+  setup-watchcat:
+    runs-on: windows-latest
+    if: contains(github.event.issue.title, 'Genereer noodband')
+    steps:
+
+      - name: Create Input and Output Directories
+        shell: pwsh
+        run: |
+          New-Item -ItemType directory -Path "${{ github.workspace }}/input" -Force
+          New-Item -ItemType directory -Path "${{ github.workspace }}/output" -Force
+
+      - name: Extract URL and Download MP3
+        shell: pwsh
+        run: |
+          $body = "${{ github.event.issue.body }}"
+          if ($body -match "inputurl:\s*(http[s]?:\/\/\S+)") {
+            $url = $matches[1]
+            Invoke-WebRequest -Uri $url -OutFile "${{ github.workspace }}/input/audio.mp3"
+          } else {
+            Write-Output "URL not found in issue body."
+          }
+
+      - name: Download Thimeo WatchCat Installer
+        run: Invoke-WebRequest -Uri "https://www.stereotool.com/download/ThimeoWatchCat_installer_64.exe" -OutFile "ThimeoWatchCat_installer_64.exe"
+
+      - name: Install Thimeo WatchCat
+        shell: pwsh
+        run: |
+          Start-Process -FilePath ".\ThimeoWatchCat_installer_64.exe" -ArgumentList '/S'
+          Start-Sleep -Seconds 15
+
+      - name: Run Thimeo WatchCat to generate config file
+        shell: pwsh
+        run: |
+          $exePath = "C:\Program Files\Thimeo\WatchCat\ThimeoWatchCat.exe"
+          if (Test-Path $exePath) {
+            Start-Process -FilePath $exePath -NoNewWindow
+            Start-Sleep -Seconds 5
+          } else {
+            Write-Output "ThimeoWatchCat.exe not found."
+          }
+
+      - name: Check config file and display contents
+        shell: pwsh
+        run: |
+          $configPath = "$HOME\AppData\Roaming\Thimeo Audio Technology B.V.\WatchCat.ini"
+          if (Test-Path $configPath) {
+            Get-Content $configPath
+          } else {
+            Write-Output "Config file does not exist."
+          }
+
+      - name: Close the issue
+        if: success()
+        shell: pwsh
+        run: |
+          $token = "${{ secrets.GITHUB_TOKEN }}"
+          $headers = @{
+            Authorization = "token $token"
+          }
+          $url = "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}"
+          Invoke-RestMethod -Uri $url -Method PATCH -Body (@{state = "closed"} | ConvertTo-Json) -Headers $headers -ContentType "application/json"
+
