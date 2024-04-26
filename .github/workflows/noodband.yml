@@ -12,6 +12,9 @@ jobs:
     if: contains(github.event.issue.title, 'Genereer noodband')
     steps:
 
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Create Input and Output Directories
         shell: pwsh
         run: |
@@ -38,16 +41,13 @@ jobs:
           Start-Process -FilePath ".\ThimeoWatchCat_installer_64.exe" -ArgumentList '/S'
           Start-Sleep -Seconds 15
 
-      - name: Run Thimeo WatchCat to generate config file
+      - name: Copy WatchCat.ini to AppData
         shell: pwsh
         run: |
-          $exePath = "C:\Program Files\Thimeo\WatchCat\ThimeoWatchCat.exe"
-          if (Test-Path $exePath) {
-            Start-Process -FilePath $exePath -NoNewWindow
-            Start-Sleep -Seconds 5
-          } else {
-            Write-Output "ThimeoWatchCat.exe not found."
-          }
+          $sourcePath = "${{ github.workspace }}/WatchCat.ini"
+          $destPath = "$HOME\AppData\Roaming\Thimeo Audio Technology B.V.\WatchCat.ini"
+          New-Item -ItemType Directory -Path "$HOME\AppData\Roaming\Thimeo Audio Technology B.V." -Force
+          Copy-Item -Path $sourcePath -Destination $destPath
 
       - name: Check config file and display contents
         shell: pwsh
@@ -58,6 +58,22 @@ jobs:
           } else {
             Write-Output "Config file does not exist."
           }
+
+      - name: Run Thimeo WatchCat to generate audio file
+        shell: pwsh
+        run: |
+          $exePath = "C:\Program Files\Thimeo\WatchCat\ThimeoWatchCat.exe"
+          if (Test-Path $exePath) {
+            Start-Process -FilePath $exePath -NoNewWindow
+            Start-Sleep -Seconds 10
+          } else {
+            Write-Output "ThimeoWatchCat.exe not found."
+          }
+
+      - name: Output contents of the output directory
+        shell: pwsh
+        run: |
+          Get-ChildItem "${{ github.workspace }}/output" | ForEach-Object { Write-Output $_.FullName }
 
       - name: Close the issue
         if: success()
