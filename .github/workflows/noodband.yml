@@ -12,7 +12,7 @@ jobs:
 
       - name: Record audio
         run: |
-          ffmpeg -i https://icecast.zuidwestfm.nl/zuidwest.stl -t 00:03:00 -acodec copy audio.m4a
+          ffmpeg -i https://icecast.zuidwestfm.nl/zuidwest.stl -t 00:10:00 -acodec copy audio.m4a
 
       - name: Upload recorded audio
         uses: actions/upload-artifact@v4
@@ -20,7 +20,7 @@ jobs:
           name: recorded-audio
           path: audio.m4a
 
-  setup-watchcat:
+  process-audio:
     runs-on: windows-latest
     needs: record-audio
     steps:
@@ -112,5 +112,5 @@ jobs:
       - name: Upload generated file
         uses: actions/upload-artifact@v4
         with:
-          name: watchcat-output
+          name: processed-audio
           path: "${{ github.workspace }}/output"
