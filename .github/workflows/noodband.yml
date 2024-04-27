@@ -109,8 +109,26 @@ jobs:
         run: |
           Get-ChildItem "${{ github.workspace }}/output" | ForEach-Object { Write-Output $_.FullName }
 
-      - name: Upload generated file
+      - name: Upload processed file
         uses: actions/upload-artifact@v4
         with:
           name: processed-audio
           path: "${{ github.workspace }}/output"
+
+  upload-recorded-audio:
+    runs-on: ubuntu-latest
+    needs: process-audio
+    steps:
+      - name: Download recorded audio
+        uses: actions/download-artifact@v4
+        with:
+          name: recorded-audio
+
+  upload-processed-audio:
+    runs-on: ubuntu-latest
+    needs: process-audio
+    steps:
+      - name: Download processed audio
+        uses: actions/download-artifact@v4
+        with:
+          name: processed-audio
