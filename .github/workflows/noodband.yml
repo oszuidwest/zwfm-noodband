@@ -2,6 +2,8 @@ name: Noodband genereren
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '20 * * * *'
 
 jobs:
   record-audio:
