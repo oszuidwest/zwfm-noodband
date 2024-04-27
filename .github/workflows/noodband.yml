@@ -1,36 +1,43 @@
 name: Noodband genereren
 
 on:
-  issues:
-    types: [opened]
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
+  record-audio:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Record audio
+        run: |
+          ffmpeg -i https://icecast.zuidwestfm.nl/zuidwest.stl -t 00:03:00 -acodec copy audio.m4a
+
+      - name: Upload recorded audio
+        uses: actions/upload-artifact@v4
+        with:
+          name: recorded-audio
+          path: audio.m4a
+
   setup-watchcat:
     runs-on: windows-latest
-    if: contains(github.event.issue.title, 'Genereer noodband')
+    needs: record-audio
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Create Input and Output Directories
         shell: pwsh
         run: |
-          New-Item -ItemType directory -Path "${{ github.workspace }}\input" -Force
-          New-Item -ItemType directory -Path "${{ github.workspace }}\output" -Force
+          New-Item -ItemType directory -Path "${{ github.workspace }}/input" -Force
+          New-Item -ItemType directory -Path "${{ github.workspace }}/output" -Force
 
-      - name: Extract URL and Download MP3
-        shell: pwsh
-        run: |
-          $body = "${{ github.event.issue.body }}"
-          if ($body -match "inputurl:\s*(http[s]?:\/\/\S+)") {
-            $url = $matches[1]
-            Invoke-WebRequest -Uri $url -OutFile "${{ github.workspace }}\input\audio.mp3"
-          } else {
-            Write-Output "URL not found in issue body."
-          }
+      - name: Download Recorded Audio
+        uses: actions/download-artifact@v4
+        with:
+          name: recorded-audio
+          path: "${{ github.workspace }}/input"
 
       - name: Download Thimeo WatchCat Installer
         run: Invoke-WebRequest -Uri "https://www.stereotool.com/download/ThimeoWatchCat_installer_64.exe" -OutFile "ThimeoWatchCat_installer_64.exe"
@@ -44,15 +51,15 @@ jobs:
       - name: Copy WatchCat.ini to AppData
         shell: pwsh
         run: |
-          $sourcePath = "${{ github.workspace }}\WatchCat.ini"
-          $destPath = "$HOME\AppData\Roaming\Thimeo Audio Technology B.V.\WatchCat.ini"
-          New-Item -ItemType Directory -Path "$HOME\AppData\Roaming\Thimeo Audio Technology B.V." -Force
+          $sourcePath = "${{ github.workspace }}/WatchCat.ini"
+          $destPath = "$HOME/AppData/Roaming/Thimeo Audio Technology B.V./WatchCat.ini"
+          New-Item -ItemType Directory -Path "$HOME/AppData/Roaming/Thimeo Audio Technology B.V." -Force
           Copy-Item -Path $sourcePath -Destination $destPath
 
       - name: Check config file and display contents
         shell: pwsh
         run: |
-          $configPath = "$HOME\AppData\Roaming\Thimeo Audio Technology B.V.\WatchCat.ini"
+          $configPath = "$HOME/AppData/Roaming/Thimeo Audio Technology B.V./WatchCat.ini"
           if (Test-Path $configPath) {
             Get-Content $configPath
           } else {
@@ -73,7 +80,7 @@ jobs:
       - name: Take Screenshot
         shell: pwsh
         run: |
-          Start-Sleep -Seconds 60
+          Start-Sleep -Seconds 30
           ./screenshot.ps1
 
       - name: Upload Screenshot
@@ -85,13 +92,13 @@ jobs:
       - name: Waiting for WatchCat to finish
         shell: pwsh
         run: |
-          $processedPath = "${{ github.workspace }}\input\Processed"
-          $failedPath = "${{ github.workspace }}\input\Failed"
-          
+          $processedPath = "${{ github.workspace }}/input/Processed"
+          $failedPath = "${{ github.workspace }}/input/Failed"
+
           while (-not (Test-Path $processedPath)) {
             if (Test-Path $failedPath) {
               Write-Output "Processing failed, 'Failed' directory found."
-              exit 1  # Exit the script with an error status
+              exit 1
             }
             Start-Sleep -Seconds 10
             Write-Output "Waiting for 'Processed' directory to appear..."
@@ -100,22 +107,10 @@ jobs:
       - name: Output contents of the output directory
         shell: pwsh
         run: |
-          Get-ChildItem "${{ github.workspace }}\output" | ForEach-Object { Write-Output $_.FullName }
+          Get-ChildItem "${{ github.workspace }}/output" | ForEach-Object { Write-Output $_.FullName }
 
       - name: Upload generated file
         uses: actions/upload-artifact@v4
         with:
           name: watchcat-output
           path: "${{ github.workspace }}/output"
-
-      - name: Close the issue
-        if: success()
-        shell: pwsh
-        run: |
-          $token = "${{ secrets.GITHUB_TOKEN }}"
-          $headers = @{
-            Authorization = "token $token"
-          }
-          $url = "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}"
-          Invoke-RestMethod -Uri $url -Method PATCH -Body (@{state = "closed"} | ConvertTo-Json) -Headers $headers -ContentType "application/json"
-
