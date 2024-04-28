@@ -14,7 +14,7 @@ jobs:
 
       - name: Record audio
         run: |
-          ffmpeg -i https://icecast.zuidwestfm.nl/zuidwest.stl -t 00:10:00 -acodec pcm_s16le audio.wav
+          ffmpeg -i https://icecast.zuidwestfm.nl/zuidwest.stl -t 00:45:00 -acodec pcm_s16le audio.wav
 
       - name: Upload recorded audio
         uses: actions/upload-artifact@v4
