@@ -2,8 +2,6 @@ name: Noodband genereren
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '20 * * * *'
 
 jobs:
   record-audio:
@@ -13,7 +11,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
       - name: Record audio
-        run: ffmpeg -i https://icecast.zuidwestfm.nl/zuidwest.stl -t 00:01:00 -acodec pcm_s16le audio.wav
+        run: ffmpeg -i https://icecast.zuidwestfm.nl/zuidwest.stl -t 00:05:00 -acodec pcm_s16le audio.wav
 
       - name: Upload recorded audio
         uses: actions/upload-artifact@v4
@@ -149,5 +147,10 @@ jobs:
       - name: Start WireGuard Interface
         run: sudo systemctl start wg-quick@wg0
 
-      - name: Test ping
-        run: ping 172.18.1.31
+      - name: Upload processed audio via SCP
+        env:
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          REMOTE_PASSWORD: ${{ secrets.REMOTE_PASSWORD }}
+        run: |
+          sudo apt-get install -y sshpass
+          sshpass -p $REMOTE_PASSWORD scp -o StrictHostKeyChecking=no "${{ github.workspace }}/processed-audio/audio.flac" $REMOTE_USER@172.18.1.35:/var/audio/fallback.flac
