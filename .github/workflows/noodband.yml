@@ -13,8 +13,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
       - name: Record audio
-        run: |
-          ffmpeg -i https://icecast.zuidwestfm.nl/zuidwest.stl -t 00:45:00 -acodec pcm_s16le audio.wav
+        run: ffmpeg -i https://icecast.zuidwestfm.nl/zuidwest.stl -t 00:01:00 -acodec pcm_s16le audio.wav
 
       - name: Upload recorded audio
         uses: actions/upload-artifact@v4
@@ -82,7 +81,7 @@ jobs:
       - name: Take Screenshot
         shell: pwsh
         run: |
-          Start-Sleep -Seconds 30
+          Start-Sleep -Seconds 10
           ./screenshot.ps1
 
       - name: Upload Screenshot
@@ -96,7 +95,6 @@ jobs:
         run: |
           $processedPath = "${{ github.workspace }}/input/Processed"
           $failedPath = "${{ github.workspace }}/input/Failed"
-
           while (-not (Test-Path $processedPath)) {
             if (Test-Path $failedPath) {
               Write-Output "Processing failed, 'Failed' directory found."
@@ -117,20 +115,39 @@ jobs:
           name: processed-audio
           path: "${{ github.workspace }}/output"
 
-  upload-recorded-audio:
+  upload-audio:
     runs-on: ubuntu-latest
     needs: process-audio
     steps:
-      - name: Download recorded audio
+      - name: Download audio
         uses: actions/download-artifact@v4
-        with:
-          name: recorded-audio
 
-  upload-processed-audio:
-    runs-on: ubuntu-latest
-    needs: process-audio
-    steps:
-      - name: Download processed audio
-        uses: actions/download-artifact@v4
-        with:
-          name: processed-audio
+      - name: Install WireGuard
+        run: sudo apt-get update && sudo apt-get install -y wireguard
+
+      - name: Generate Public Key
+        id: generate-keys
+        run: |
+          PRIVATE_KEY="${{ secrets.WG_DEVICE_PRIVATE_KEY }}"
+          echo "PRIVATE_KEY=$PRIVATE_KEY" > $GITHUB_ENV
+          PUBLIC_KEY=$(echo "$PRIVATE_KEY" | wg pubkey)
+          echo "PUBLIC_KEY=$PUBLIC_KEY" >> $GITHUB_ENV
+
+      - name: Configure WireGuard
+        run: |
+          sudo bash -c "cat >/etc/wireguard/wg0.conf <<EOL
+          [Interface]
+          Address = ${{ secrets.WG_DEVICE_ADDRESS }}/32
+          PrivateKey = ${{ secrets.WG_DEVICE_PRIVATE_KEY }}
+
+          [Peer]
+          PublicKey = ${{ secrets.WG_SERVER_PUBLIC_KEY }}
+          Endpoint = ${{ secrets.WG_SERVER_PUBLIC_IP }}:51820
+          AllowedIPs = ${{ secrets.WG_NETWORK }}
+          EOL"
+
+      - name: Start WireGuard Interface
+        run: sudo systemctl start wg-quick@wg0
+
+      - name: Test ping
+        run: ping 172.18.1.31
