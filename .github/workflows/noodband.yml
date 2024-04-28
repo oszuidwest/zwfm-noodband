@@ -2,6 +2,8 @@ name: Noodband genereren
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
 
 jobs:
   record-audio:
@@ -11,7 +13,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
       - name: Record audio
-        run: ffmpeg -i https://icecast.zuidwestfm.nl/zuidwest.stl -t 00:05:00 -acodec pcm_s16le audio.wav
+        run: ffmpeg -i https://icecast.zuidwestfm.nl/zuidwest.stl -t 00:59:59 -acodec pcm_s16le audio.wav
 
       - name: Upload recorded audio
         uses: actions/upload-artifact@v4
