@@ -3,7 +3,7 @@ name: Noodband genereren
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 2 * * *'
+    - cron: '40 1 * * *'
 
 jobs:
   record-audio:
@@ -11,6 +11,13 @@ jobs:
     steps:
       - name: Install ffmpeg
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Wait for top of the hour
+        run: |
+          CURRENT_MINUTE=$(date +%M)
+          SECONDS_TO_NEXT_HOUR=$(( (60 - $CURRENT_MINUTE) * 60 ))
+          echo "Waiting $SECONDS_TO_NEXT_HOUR seconds for the top of the hour."
+          sleep $SECONDS_TO_NEXT_HOUR
 
       - name: Record audio
         run: ffmpeg -i https://icecast.zuidwestfm.nl/zuidwest.stl -t 02:59:59 -acodec pcm_s16le audio.wav
