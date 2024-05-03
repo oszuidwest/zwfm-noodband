@@ -15,7 +15,8 @@ jobs:
       - name: Wait for top of the hour
         run: |
           CURRENT_MINUTE=$(date +%M)
-          SECONDS_TO_NEXT_HOUR=$(( (60 - $CURRENT_MINUTE) * 60 ))
+          CURRENT_SECOND=$(date +%S)
+          SECONDS_TO_NEXT_HOUR=$(( (60 - $CURRENT_MINUTE) * 60 - $CURRENT_SECOND ))
           echo "Waiting $SECONDS_TO_NEXT_HOUR seconds for the top of the hour."
           sleep $SECONDS_TO_NEXT_HOUR
 
